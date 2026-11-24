@@ -6,7 +6,7 @@
     <title>تكسي بصراوي الصغير 3D 🚕</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; user-select: none; -webkit-user-select: none; }
-        body { background: #102027; overflow: hidden; height: 100vh; width: 100vw; position: relative; }
+        body { background: #0f172a; overflow: hidden; height: 100vh; width: 100vw; position: relative; }
 
         #game-canvas { display: block; width: 100%; height: 100%; }
 
@@ -30,51 +30,66 @@
         }
 
         .hud-pill {
-            background: rgba(15, 23, 42, 0.82);
+            background: rgba(15, 23, 42, 0.84);
             backdrop-filter: blur(6px);
             color: #fff;
             padding: 6px 12px;
             border-radius: 14px;
             font-weight: bold;
             font-size: 13px;
-            border: 1.5px solid rgba(255, 214, 0, 0.65);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            border: 1.5px solid rgba(255, 214, 0, 0.7);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
         }
 
         /* الخريطة المصغرة */
         #minimap-wrap {
-            width: 96px;
-            height: 96px;
+            width: 98px;
+            height: 98px;
             border-radius: 50%;
             border: 3px solid #ffd600;
-            background: rgba(15, 23, 42, 0.88);
+            background: rgba(15, 23, 42, 0.9);
             overflow: hidden;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5);
         }
         #minimap { width: 100%; height: 100%; display: block; }
 
-        /* شريط المهمة */
+        /* شريط المهمة والسرعة */
         #mission-toast {
             position: absolute;
             top: 58px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 248, 225, 0.96);
+            background: rgba(255, 250, 230, 0.96);
             color: #1b5e20;
-            padding: 6px 15px;
+            padding: 6px 16px;
             border-radius: 18px;
             font-weight: bold;
             font-size: 12.5px;
             border: 2px solid #ffb300;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
             z-index: 14;
             white-space: nowrap;
+        }
+
+        #speed-badge {
+            position: absolute;
+            bottom: 138px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.82);
+            color: #ffd600;
+            padding: 5px 11px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 12px;
+            border: 1px solid rgba(255, 214, 0, 0.45);
+            pointer-events: none;
+            z-index: 18;
         }
 
         /* أزرار التحكم (مرفوعة ومرتبة بوضوح) */
         #controls-layer {
             position: absolute;
-            bottom: 34px;
+            bottom: 36px;
             left: 18px;
             right: 18px;
             display: flex;
@@ -84,7 +99,7 @@
             z-index: 20;
         }
 
-        /* لوحة اتجاهات مربعة صغيرة وواضحة */
+        /* اتجاهات مربعة صغيرة وواضحة */
         .square-dpad {
             display: grid;
             grid-template-columns: repeat(3, 42px);
@@ -92,17 +107,18 @@
             gap: 4px;
             pointer-events: auto;
             direction: ltr;
-            background: rgba(15, 23, 42, 0.35);
+            background: rgba(15, 23, 42, 0.42);
             padding: 6px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: 1.5px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.35);
         }
 
         .sq-btn {
             width: 42px;
             height: 42px;
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.94);
+            background: rgba(255, 255, 255, 0.96);
             color: #0d3b10;
             border: 2px solid #2e7d32;
             font-size: 18px;
@@ -147,18 +163,18 @@
             color: #fff;
             font-weight: bold;
             font-size: 12px;
-            border: 2px solid rgba(255,255,255,0.8);
+            border: 2px solid rgba(255,255,255,0.85);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 3px;
             cursor: pointer;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.45);
         }
         .pedal-sq:active, .pedal-sq.pressed {
             transform: translateY(3px);
-            box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.45);
         }
         .gas-sq { background: linear-gradient(180deg, #43a047, #1b5e20); }
         .brake-sq { background: linear-gradient(180deg, #e53935, #b71c1c); }
@@ -176,11 +192,11 @@
         }
         .horn-sq:active { transform: translateY(2px); }
 
-        /* النوافذ المنبثقة */
+        /* الشاشات المنبثقة */
         .overlay-screen {
             position: fixed;
             inset: 0;
-            background: rgba(10, 25, 47, 0.84);
+            background: rgba(10, 25, 47, 0.85);
             backdrop-filter: blur(6px);
             display: flex;
             align-items: center;
@@ -217,19 +233,17 @@
 </head>
 <body>
 
-    <!-- شاشة البداية -->
     <div id="start-screen" class="overlay-screen">
         <div class="modal-card">
             <div style="font-size: 58px; margin-bottom: 6px;">🚕🌴</div>
             <h1 style="font-size: 22px; margin-bottom: 8px;">تكسي بصراوي الصغير 3D</h1>
             <p style="font-size: 13.5px; color: #37474f; line-height: 1.55;">
-                سُق التكسي في شوارع البصرة بواقعية وحذر مع سيارات المرور، اصعد الركاب، ووصلهم لمعالم المدينة واجمع النجوم!
+                سُق التكسي في شوارع البصرة بواقعية وانسيابية مع سيارات المرور، اصعد الركاب، ووصلهم لمعالم المدينة واجمع النجوم!
             </p>
             <button class="action-btn" onclick="startGame()">ابدأ اللعب 🚀</button>
         </div>
     </div>
 
-    <!-- بطاقة الراكب -->
     <div id="passenger-card" class="overlay-screen hidden">
         <div class="modal-card">
             <div id="p-avatar" style="font-size: 52px; margin-bottom: 4px;">🧑‍🎓</div>
@@ -242,7 +256,6 @@
         </div>
     </div>
 
-    <!-- شاشة إكمال المرحلة -->
     <div id="complete-screen" class="overlay-screen hidden">
         <div class="modal-card">
             <div style="font-size: 40px; margin-bottom: 4px;">⭐⭐⭐</div>
@@ -257,7 +270,6 @@
         </div>
     </div>
 
-    <!-- الشريط العلوي والخريطة المصغرة -->
     <div id="top-hud">
         <div class="hud-group">
             <div class="hud-pill">⏱️ <span id="timer-val">60</span>s</div>
@@ -265,18 +277,16 @@
             <div class="hud-pill">🏆 مرحلة <span id="level-val">1</span></div>
         </div>
         <div id="minimap-wrap">
-            <canvas id="minimap" width="96" height="96"></canvas>
+            <canvas id="minimap" width="98" height="98"></canvas>
         </div>
     </div>
 
     <div id="mission-toast">اتجه إلى الدائرة الخضراء لالتقاط الراكب! 🟢</div>
+    <div id="speed-badge"><span id="speed-kmh">0</span> KM/H</div>
 
-    <!-- مشهد 3D -->
     <canvas id="game-canvas"></canvas>
 
-    <!-- أزرار التحكم -->
     <div id="controls-layer">
-        <!-- اتجاهات مربعة صغيرة وواضحة -->
         <div class="square-dpad" aria-label="أزرار الاتجاهات">
             <div class="sq-empty"></div>
             <button class="sq-btn" id="btn-up" title="فوق">⬆️</button>
@@ -291,7 +301,6 @@
             <div class="sq-empty"></div>
         </div>
 
-        <!-- هورن + GAS + BRAKE -->
         <div class="right-controls">
             <button class="horn-sq" onclick="playHorn()" title="هورن">📣</button>
             <div class="pedals-box">
@@ -302,7 +311,6 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // الأصوات المدمجة
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playTone(freq, type, dur, delay = 0) {
             setTimeout(() => {
@@ -329,7 +337,6 @@
             playTone(783.99, 'sine', 0.24, 220);
         }
 
-        // إعداد المشهد والواقعية
         const canvas = document.getElementById('game-canvas');
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -339,16 +346,16 @@
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x90caf9);
-        scene.fog = new THREE.FogExp2(0x90caf9, 0.0042);
+        scene.fog = new THREE.FogExp2(0x90caf9, 0.0038);
 
-        const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 450);
+        const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 450);
 
-        // إضاءة نهارية متوازنة
-        const hemiLight = new THREE.HemisphereLight(0xe3f2fd, 0x558b2f, 0.8);
+        // إضاءة نهارية طبيعية
+        const hemiLight = new THREE.HemisphereLight(0xe1f5fe, 0x558b2f, 0.85);
         scene.add(hemiLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfffde7, 0.9);
-        sunLight.position.set(65, 110, 55);
+        const sunLight = new THREE.DirectionalLight(0xfffde7, 0.92);
+        sunLight.position.set(70, 120, 60);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 1024;
         sunLight.shadow.mapSize.height = 1024;
@@ -356,7 +363,7 @@
 
         // الأرضية الخضراء
         const ground = new THREE.Mesh(
-            new THREE.PlaneGeometry(360, 360),
+            new THREE.PlaneGeometry(380, 380),
             new THREE.MeshLambertMaterial({ color: 0x689f38 })
         );
         ground.rotation.x = -Math.PI / 2;
@@ -365,39 +372,51 @@
 
         // نهر شط العرب والكورنيش
         const river = new THREE.Mesh(
-            new THREE.PlaneGeometry(360, 52),
+            new THREE.PlaneGeometry(380, 56),
             new THREE.MeshLambertMaterial({ color: 0x0277bd })
         );
         river.rotation.x = -Math.PI / 2;
-        river.position.set(0, 0.04, -142);
+        river.position.set(0, 0.04, -144);
         scene.add(river);
 
         const corniche = new THREE.Mesh(
-            new THREE.PlaneGeometry(260, 8),
+            new THREE.PlaneGeometry(268, 8),
             new THREE.MeshLambertMaterial({ color: 0xeceff1 })
         );
         corniche.rotation.x = -Math.PI / 2;
         corniche.position.set(0, 0.07, -112);
         scene.add(corniche);
 
-        // قوارب على شط العرب
+        // قوارب متحركة في شط العرب
         const boats = [];
-        for (let i = 0; i < 3; i++) {
-            const boat = new THREE.Mesh(
-                new THREE.BoxGeometry(7, 1.5, 2.6),
-                new THREE.MeshLambertMaterial({ color: i === 0 ? 0xffffff : (i === 1 ? 0xffa726 : 0xef5350) })
+        for (let i = 0; i < 4; i++) {
+            const boatGroup = new THREE.Group();
+            const hull = new THREE.Mesh(
+                new THREE.BoxGeometry(7.2, 1.4, 2.5),
+                new THREE.MeshLambertMaterial({ color: i % 2 === 0 ? 0xffffff : 0xffa726 })
             );
-            boat.position.set(-70 + i * 70, 0.6, -142);
-            scene.add(boat);
-            boats.push({ mesh: boat, dir: i % 2 === 0 ? 1 : -1 });
+            hull.position.y = 0.6;
+            boatGroup.add(hull);
+
+            const cabinB = new THREE.Mesh(
+                new THREE.BoxGeometry(2.6, 1.1, 1.8),
+                new THREE.MeshLambertMaterial({ color: 0x29b6f6 })
+            );
+            cabinB.position.set(-0.4, 1.5, 0);
+            boatGroup.add(cabinB);
+
+            boatGroup.position.set(-90 + i * 60, 0, -144);
+            scene.add(boatGroup);
+            boats.push({ mesh: boatGroup, dir: i % 2 === 0 ? 1 : -1 });
         }
-        // شبكة الشوارع والأرصفة
         const roadCoords = [-80, -40, 0, 40, 80];
         const roadMat = new THREE.MeshLambertMaterial({ color: 0x263238 });
         const curbMat = new THREE.MeshLambertMaterial({ color: 0xcfd8dc });
         const dashMat = new THREE.MeshBasicMaterial({ color: 0xfff59d });
+        const poleMat = new THREE.MeshLambertMaterial({ color: 0x546e7a });
+        const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff9c4 });
 
-        roadCoords.forEach(pos => {
+        roadCoords.forEach((pos, rIdx) => {
             // رصيف + شارع أفقي
             const hCurb = new THREE.Mesh(new THREE.PlaneGeometry(224, 15.2), curbMat);
             hCurb.rotation.x = -Math.PI / 2;
@@ -421,7 +440,7 @@
             scene.add(vRoad);
 
             // خطوط وسطية متقطعة
-            for (let d = -95; d <= 95; d += 12) {
+            for (let d = -96; d <= 96; d += 12) {
                 const hDash = new THREE.Mesh(new THREE.PlaneGeometry(5, 0.35), dashMat);
                 hDash.rotation.x = -Math.PI / 2;
                 hDash.position.set(d, 0.12, pos);
@@ -432,11 +451,25 @@
                 vDash.position.set(pos, 0.12, d);
                 scene.add(vDash);
             }
+
+            // أعمدة إنارة على جانب الشوارع
+            if (rIdx % 2 === 0) {
+                [-60, 0, 60].forEach(lp => {
+                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 6.2, 6), poleMat);
+                    pole.position.set(lp, 3.1, pos + 7.6);
+                    scene.add(pole);
+
+                    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), lampMat);
+                    bulb.position.set(lp, 6.3, pos + 7.6);
+                    scene.add(bulb);
+                });
+            }
         });
 
-        // مبانٍ بنوافذ ونخيل البصرة
+        // مبانٍ بتفاصيل واقعية ونخيل البصرة
         const bColors = [0xd7ccc8, 0xb0bec5, 0xffe0b2, 0xc5cae9, 0xb2dfdb, 0xf8bbd0];
-        const winMat = new THREE.MeshBasicMaterial({ color: 0x37474f });
+        const winMat = new THREE.MeshBasicMaterial({ color: 0x263238 });
+        const roofMat = new THREE.MeshLambertMaterial({ color: 0x78909c });
         const buildings = [];
 
         for (let ix = 0; ix < roadCoords.length - 1; ix++) {
@@ -456,11 +489,20 @@
                 bMesh.receiveShadow = true;
                 bGroup.add(bMesh);
 
+                // حافة سطح المبنى
+                const cap = new THREE.Mesh(new THREE.BoxGeometry(19.6, 0.6, 19.6), roofMat);
+                cap.position.y = bh + 0.3;
+                bGroup.add(cap);
+
                 // نوافذ للمبنى
-                for (let wy = 3; wy < bh - 2; wy += 4) {
-                    const win = new THREE.Mesh(new THREE.BoxGeometry(14, 1.5, 19.2), winMat);
-                    win.position.y = wy;
-                    bGroup.add(win);
+                for (let wy = 3.2; wy < bh - 2; wy += 4) {
+                    const winNS = new THREE.Mesh(new THREE.BoxGeometry(14.5, 1.4, 19.25), winMat);
+                    winNS.position.y = wy;
+                    bGroup.add(winNS);
+
+                    const winEW = new THREE.Mesh(new THREE.BoxGeometry(19.25, 1.4, 14.5), winMat);
+                    winEW.position.y = wy;
+                    bGroup.add(winEW);
                 }
 
                 bGroup.position.set(bx, 0, bz);
@@ -469,27 +511,27 @@
 
                 // نخلة
                 const trunk = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.32, 0.48, 5.2, 7),
+                    new THREE.CylinderGeometry(0.32, 0.48, 5.4, 7),
                     new THREE.MeshLambertMaterial({ color: 0x5d4037 })
                 );
-                trunk.position.set(bx + 11.5, 2.6, bz + 11.5);
+                trunk.position.set(bx + 11.4, 2.7, bz + 11.4);
                 scene.add(trunk);
 
                 const crown = new THREE.Mesh(
-                    new THREE.ConeGeometry(2.7, 3.0, 7),
+                    new THREE.ConeGeometry(2.8, 3.1, 7),
                     new THREE.MeshLambertMaterial({ color: 0x2e7d32 })
                 );
-                crown.position.set(bx + 11.5, 5.7, bz + 11.5);
+                crown.position.set(bx + 11.4, 5.9, bz + 11.4);
                 scene.add(crown);
             }
         }
 
-        // دالة بناء سيارة (للتكسي وللبوتات)
+        // دالة بناء سيارة بتفاصيل واقعية (للتكسي وللبوتات)
         function createCarMesh(bodyHex, roofHex, isTaxi = false) {
             const car = new THREE.Group();
 
             const chassis = new THREE.Mesh(
-                new THREE.BoxGeometry(2.3, 0.95, 4.4),
+                new THREE.BoxGeometry(2.35, 0.92, 4.5),
                 new THREE.MeshLambertMaterial({ color: bodyHex })
             );
             chassis.position.y = 0.78;
@@ -497,49 +539,60 @@
             car.add(chassis);
 
             const cabin = new THREE.Mesh(
-                new THREE.BoxGeometry(1.92, 0.8, 2.25),
+                new THREE.BoxGeometry(1.94, 0.82, 2.3),
                 new THREE.MeshLambertMaterial({ color: roofHex })
             );
-            cabin.position.set(0, 1.58, -0.2);
+            cabin.position.set(0, 1.56, -0.15);
             cabin.castShadow = true;
             car.add(cabin);
+
+            // صادمات أمامية وخلفية
+            const bumperMat = new THREE.MeshLambertMaterial({ color: 0x37474f });
+            [-2.28, 2.28].forEach(bz => {
+                const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.34, 0.22), bumperMat);
+                bumper.position.set(0, 0.56, bz);
+                car.add(bumper);
+            });
 
             // مصابيح أمامية وخلفية
             const headLightMat = new THREE.MeshBasicMaterial({ color: 0xfff59d });
             const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff1744 });
-            [-0.75, 0.75].forEach(lx => {
-                const hl = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.25, 0.12), headLightMat);
-                hl.position.set(lx, 0.78, -2.22);
+            [-0.78, 0.78].forEach(lx => {
+                const hl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.12), headLightMat);
+                hl.position.set(lx, 0.82, -2.26);
                 car.add(hl);
 
-                const tl = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.25, 0.12), tailLightMat);
-                tl.position.set(lx, 0.78, 2.22);
+                const tl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.12), tailLightMat);
+                tl.position.set(lx, 0.82, 2.26);
                 car.add(tl);
             });
 
             if (isTaxi) {
                 const taxiSign = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.95, 0.32, 0.45),
+                    new THREE.BoxGeometry(0.98, 0.34, 0.46),
                     new THREE.MeshBasicMaterial({ color: 0xffffff })
                 );
-                taxiSign.position.set(0, 2.12, -0.2);
+                taxiSign.position.set(0, 2.12, -0.15);
                 car.add(taxiSign);
             }
 
-            const wGeo = new THREE.CylinderGeometry(0.44, 0.44, 0.34, 12);
+            const wheels = [];
+            const wGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.34, 14);
             const wMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
-            [[-1.22, 1.3], [1.22, 1.3], [-1.22, -1.3], [1.22, -1.3]].forEach(([wx, wz]) => {
+            [[-1.24, 1.35], [1.24, 1.35], [-1.24, -1.35], [1.24, -1.35]].forEach(([wx, wz]) => {
                 const wheel = new THREE.Mesh(wGeo, wMat);
                 wheel.rotation.z = Math.PI / 2;
-                wheel.position.set(wx, 0.44, wz);
+                wheel.position.set(wx, 0.45, wz);
                 car.add(wheel);
+                wheels.push(wheel);
             });
 
-            return car;
+            return { group: car, wheels };
         }
 
         // التكسي الأصفر
-        const taxiGroup = createCarMesh(0xffd600, 0xfff9c4, true);
+        const taxiObj = createCarMesh(0xffd600, 0xfff9c4, true);
+        const taxiGroup = taxiObj.group;
         scene.add(taxiGroup);
 
         // سيارات البوتات (حركة مرور حقيقية على الشوارع)
@@ -555,7 +608,8 @@
         const botCars = [];
         for (let i = 0; i < 8; i++) {
             const [bCol, rCol] = botPalette[i % botPalette.length];
-            const mesh = createCarMesh(bCol, rCol, false);
+            const carObj = createCarMesh(bCol, rCol, false);
+            const mesh = carObj.group;
             const isHorizontal = i % 2 === 0;
             const laneCoord = roadCoords[i % roadCoords.length] + (i < 4 ? -2.6 : 2.6);
             const startPos = -80 + i * 22;
@@ -571,6 +625,7 @@
             scene.add(mesh);
             botCars.push({
                 mesh,
+                wheels: carObj.wheels,
                 horizontal: isHorizontal,
                 lane: laneCoord,
                 dir: i < 4 ? 1 : -1,
@@ -700,83 +755,78 @@
         }
 
         function updateBots() {
-            // تحريك قوارب شط العرب
             boats.forEach(b => {
                 b.mesh.position.x += b.dir * 0.12;
-                if (b.mesh.position.x > 130) b.mesh.position.x = -130;
-                if (b.mesh.position.x < -130) b.mesh.position.x = 130;
+                if (b.mesh.position.x > 135) b.mesh.position.x = -135;
+                if (b.mesh.position.x < -135) b.mesh.position.x = 135;
             });
 
             if (pausedForModal) return;
 
-            // تحريك سيارات البوتات مع مراعاة المسافة عن التكسي وبقية البوتات
             botCars.forEach((bot, idx) => {
                 let factor = 1;
 
-                // التباطؤ إذا اقترب البوت من التكسي
                 if (bot.mesh.position.distanceTo(taxiGroup.position) < 8.5) {
-                    factor = 0.15;
+                    factor = 0.12;
                 }
 
-                // التباطؤ إذا كان أمام البوت سيارة بوت أخرى
                 for (let j = 0; j < botCars.length; j++) {
                     if (idx === j) continue;
                     const other = botCars[j].mesh;
                     if (bot.horizontal && Math.abs(other.position.z - bot.mesh.position.z) < 3.5) {
                         const ahead = (other.position.x - bot.mesh.position.x) * bot.dir;
-                        if (ahead > 0 && ahead < 9.5) factor = 0.2;
+                        if (ahead > 0 && ahead < 9.5) factor = 0.18;
                     } else if (!bot.horizontal && Math.abs(other.position.x - bot.mesh.position.x) < 3.5) {
                         const ahead = (other.position.z - bot.mesh.position.z) * bot.dir;
-                        if (ahead > 0 && ahead < 9.5) factor = 0.2;
+                        if (ahead > 0 && ahead < 9.5) factor = 0.18;
                     }
                 }
 
+                const step = bot.speed * factor;
                 if (bot.horizontal) {
-                    bot.mesh.position.x += bot.dir * bot.speed * factor;
+                    bot.mesh.position.x += bot.dir * step;
                     if (bot.mesh.position.x > 102) bot.mesh.position.x = -102;
                     if (bot.mesh.position.x < -102) bot.mesh.position.x = 102;
                 } else {
-                    bot.mesh.position.z += bot.dir * bot.speed * factor;
+                    bot.mesh.position.z += bot.dir * step;
                     if (bot.mesh.position.z > 102) bot.mesh.position.z = -102;
                     if (bot.mesh.position.z < -102) bot.mesh.position.z = 102;
                 }
+
+                bot.wheels.forEach(w => { w.rotation.x += step * 1.4; });
             });
         }
 
         const minimapCtx = document.getElementById('minimap').getContext('2d');
         function drawMinimap() {
-            minimapCtx.clearRect(0, 0, 96, 96);
+            minimapCtx.clearRect(0, 0, 98, 98);
             minimapCtx.fillStyle = '#1b5e20';
-            minimapCtx.fillRect(0, 0, 96, 96);
+            minimapCtx.fillRect(0, 0, 98, 98);
 
-            // الشوارع
             minimapCtx.strokeStyle = '#607d8b';
             minimapCtx.lineWidth = 2.5;
             roadCoords.forEach(c => {
-                const p = ((c + 105) / 210) * 96;
-                minimapCtx.beginPath(); minimapCtx.moveTo(0, p); minimapCtx.lineTo(96, p); minimapCtx.stroke();
-                minimapCtx.beginPath(); minimapCtx.moveTo(p, 0); minimapCtx.lineTo(p, 96); minimapCtx.stroke();
+                const p = ((c + 105) / 210) * 98;
+                minimapCtx.beginPath(); minimapCtx.moveTo(0, p); minimapCtx.lineTo(98, p); minimapCtx.stroke();
+                minimapCtx.beginPath(); minimapCtx.moveTo(p, 0); minimapCtx.lineTo(p, 98); minimapCtx.stroke();
             });
 
-            // البوتات بالخريطة المصغرة
             minimapCtx.fillStyle = '#90caf9';
             botCars.forEach(bot => {
-                const bx = ((bot.mesh.position.x + 105) / 210) * 96;
-                const bz = ((bot.mesh.position.z + 105) / 210) * 96;
+                const bx = ((bot.mesh.position.x + 105) / 210) * 98;
+                const bz = ((bot.mesh.position.z + 105) / 210) * 98;
                 minimapCtx.fillRect(bx - 1.5, bz - 1.5, 3, 3);
             });
 
-            // الهدف
-            const tx = ((markerRing.position.x + 105) / 210) * 96;
-            const tz = ((markerRing.position.z + 105) / 210) * 96;
+            const tx = ((markerRing.position.x + 105) / 210) * 98;
+            const tz = ((markerRing.position.z + 105) / 210) * 98;
             minimapCtx.fillStyle = missionState === 'pickup' ? '#00e676' : '#ff9100';
             minimapCtx.beginPath();
             minimapCtx.arc(tx, tz, 4.5, 0, Math.PI * 2);
             minimapCtx.fill();
 
-            // التكسي
-            const px = ((taxiGroup.position.x + 105) / 210) * 96;
-            const pz = ((taxiGroup.position.z + 105) / 210) * 96;
+            const px = ((taxiGroup.position.x + 105) / 210) * 98;
+            const pz = ((taxiGroup.position.z + 105) / 210) * 98;
             minimapCtx.fillStyle = '#ffd600';
             minimapCtx.beginPath();
             minimapCtx.arc(px, pz, 4, 0, Math.PI * 2);
@@ -793,7 +843,6 @@
             else if (backward) speed = Math.max(-0.30, speed - 0.032);
             else speed *= 0.94;
 
-            // التوجيه يمين / يسار بسلاسة (يعمل حتى عند الحركة البطيئة أو التقدم/الرجوع)
             const steerDir = speed >= -0.02 ? 1 : -1;
             const steerStrength = Math.abs(speed) > 0.03 ? 0.042 : 0.024;
             if (input.left) heading += steerStrength * steerDir;
@@ -802,7 +851,6 @@
             const nextX = taxiGroup.position.x - Math.sin(heading) * speed;
             const nextZ = taxiGroup.position.z - Math.cos(heading) * speed;
 
-            // منع الاصطدام بالمباني
             let blocked = false;
             for (const b of buildings) {
                 if (Math.abs(nextX - b.x) < b.half && Math.abs(nextZ - b.z) < b.half) {
@@ -811,7 +859,6 @@
                 }
             }
 
-            // تجنب الاصطدام المباشر بسيارات البوتات
             if (!blocked) {
                 for (const bot of botCars) {
                     if (Math.hypot(nextX - bot.mesh.position.x, nextZ - bot.mesh.position.z) < 3.4) {
@@ -829,8 +876,11 @@
             }
 
             taxiGroup.rotation.y = heading;
+            taxiObj.wheels.forEach(w => { w.rotation.x += speed * 1.4; });
 
-            // كاميرا المطاردة خلف التكسي
+            const kmh = Math.round(Math.abs(speed) * 145);
+            document.getElementById('speed-kmh').innerText = kmh;
+
             const camDist = 11.5;
             const camHeight = 5.8;
             const camX = taxiGroup.position.x + Math.sin(heading) * camDist;
@@ -838,11 +888,9 @@
             camera.position.lerp(new THREE.Vector3(camX, camHeight, camZ), 0.14);
             camera.lookAt(taxiGroup.position.x, 1.5, taxiGroup.position.z);
 
-            // نبض الحلقة
             const pulse = 1 + Math.sin(Date.now() / 220) * 0.12;
             markerRing.scale.set(pulse, pulse, 1);
 
-            // التحقق من الوصول لالتقاط الراكب أو إنزاله
             const distToTarget = Math.hypot(
                 taxiGroup.position.x - markerRing.position.x,
                 taxiGroup.position.z - markerRing.position.z
