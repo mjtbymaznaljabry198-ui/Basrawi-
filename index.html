@@ -3,61 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مغامرات تكسي بصراوي الصغير 🚕</title>
+    <title>تكسي بصراوي الصغير 3D 🚕</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; user-select: none; -webkit-user-select: none; }
-        body { background: #1b5e20; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        body { background: #1a237e; overflow: hidden; height: 100vh; width: 100vw; position: relative; }
 
-        /* الشريط العلوي */
-        #hud {
-            background: linear-gradient(135deg, #ffa000, #ff6f00);
-            color: #fff;
-            padding: 10px 14px;
+        #game-canvas { display: block; width: 100%; height: 100%; }
+
+        /* الشريط العلوي (المؤقت، النجوم، المستوى) */
+        #top-hud {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            z-index: 10;
-            border-bottom: 3px solid #e65100;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 15;
         }
-        .hud-badge {
-            background: rgba(255, 255, 255, 0.22);
-            backdrop-filter: blur(4px);
-            padding: 5px 11px;
+
+        .hud-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .hud-pill {
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(6px);
+            color: #fff;
+            padding: 7px 13px;
             border-radius: 16px;
             font-weight: bold;
-            font-size: 13px;
-            border: 1px solid rgba(255,255,255,0.35);
-        }
-
-        /* شريط المهمة */
-        #mission-banner {
-            background: #fffde7;
-            color: #263238;
-            text-align: center;
-            padding: 7px 10px;
-            font-weight: bold;
             font-size: 13.5px;
-            border-bottom: 2px solid #fbc02d;
-            z-index: 9;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            border: 1.5px solid rgba(255, 215, 0, 0.55);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        /* منطقة اللعبة */
-        #game-container {
-            position: relative;
-            flex: 1;
-            width: 100%;
+        /* الخريطة المصغرة (Minimap) */
+        #minimap-wrap {
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            border: 3.5px solid #ffd600;
+            background: rgba(15, 23, 42, 0.85);
             overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.45);
         }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
+        #minimap { width: 100%; height: 100%; display: block; }
+
+        /* شريط التوجيه العلوي */
+        #mission-toast {
+            position: absolute;
+            top: 62px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 248, 225, 0.95);
+            color: #1b5e20;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            border: 2px solid #ffb300;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            z-index: 14;
+            white-space: nowrap;
         }
 
-        /* لوحة التحكم: اتجاهات (فوق، تحت، يسار، يمين) + هورن */
-        #controls {
+        /* أزرار التحكم السفلية (يسار/يمين + GAS/BRAKE + هورن) */
+        #controls-layer {
             position: absolute;
             bottom: 16px;
             left: 16px;
@@ -69,548 +84,618 @@
             z-index: 20;
         }
 
-        .d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 58px);
-            grid-template-rows: repeat(3, 52px);
-            gap: 6px;
+        .steer-group {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+            direction: ltr;
+        }
+
+        .pedal-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
             pointer-events: auto;
         }
 
-        .ctrl-btn {
-            background: rgba(255, 255, 255, 0.92);
+        .pedals-row {
+            display: flex;
+            gap: 10px;
+            direction: ltr;
+        }
+
+        .steer-btn {
+            width: 66px;
+            height: 66px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid #1b5e20;
             color: #1b5e20;
-            border: 2.5px solid #2e7d32;
-            border-radius: 14px;
-            font-size: 22px;
+            font-size: 28px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 0 #1b5e20;
+            box-shadow: 0 5px 0 #1b5e20, 0 8px 16px rgba(0,0,0,0.3);
             cursor: pointer;
-            transition: transform 0.08s ease, background 0.12s ease;
         }
-        .ctrl-btn:active, .ctrl-btn.active-press {
-            transform: translateY(3px);
+        .steer-btn:active, .steer-btn.pressed {
+            transform: translateY(4px);
             box-shadow: 0 1px 0 #1b5e20;
             background: #ffe082;
         }
-        .empty-slot {
-            pointer-events: none;
-        }
 
-        .horn-btn {
-            pointer-events: auto;
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: linear-gradient(145deg, #ef5350, #c62828);
+        .pedal-btn {
+            width: 68px;
+            height: 82px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 14px;
             color: #fff;
-            border: 3px solid #ffcdd2;
-            font-size: 28px;
-            box-shadow: 0 5px 0 #7f0000, 0 8px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.08s ease;
-        }
-        .horn-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 1px 0 #7f0000;
-        }
-
-        /* شاشة البداية */
-        #start-screen {
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(160deg, #1b5e20 0%, #2e7d32 55%, #00838f 100%);
-            color: #fff;
+            border: 2.5px solid rgba(255,255,255,0.75);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 100;
-            text-align: center;
-            padding: 24px;
-        }
-        .start-card {
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 24px;
-            padding: 28px 22px;
-            max-width: 360px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-        }
-        .play-btn {
-            background: linear-gradient(135deg, #ffee58, #fbc02d);
-            color: #1b5e20;
-            border: none;
-            padding: 14px 36px;
-            font-size: 21px;
-            font-weight: bold;
-            border-radius: 30px;
-            margin-top: 22px;
-            box-shadow: 0 5px 0 #f57f17;
+            gap: 4px;
             cursor: pointer;
-            animation: pulseBtn 1.6s infinite;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.45);
         }
-        @keyframes pulseBtn {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.06); }
+        .pedal-btn:active, .pedal-btn.pressed {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.45);
         }
+        .gas-btn { background: linear-gradient(180deg, #43a047, #1b5e20); }
+        .brake-btn { background: linear-gradient(180deg, #e53935, #b71c1c); }
+
+        .horn-btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ffb300, #f57c00);
+            border: 2.5px solid #fff;
+            color: #fff;
+            font-size: 22px;
+            box-shadow: 0 4px 0 #e65100;
+            cursor: pointer;
+        }
+        .horn-btn:active { transform: translateY(3px); }
+
+        /* النوافذ المنبثقة (البداية، بطاقة الراكب، إكمال المرحلة) */
+        .overlay-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 25, 47, 0.82);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .modal-card {
+            background: linear-gradient(160deg, #ffffff, #f1f8e9);
+            color: #1b5e20;
+            border-radius: 26px;
+            padding: 24px 20px;
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+            border: 4px solid #ffb300;
+            box-shadow: 0 14px 35px rgba(0,0,0,0.45);
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #43a047, #1b5e20);
+            color: #fff;
+            border: none;
+            padding: 13px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            margin-top: 16px;
+            box-shadow: 0 4px 0 #0d3b10;
+            cursor: pointer;
+            width: 100%;
+        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <!-- شاشة البداية -->
-    <div id="start-screen">
-        <div class="start-card">
-            <div style="font-size: 68px; margin-bottom: 10px;">🚕🌴</div>
-            <h1 style="font-size: 25px; margin-bottom: 10px;">مغامرات تكسي بصراوي الصغير</h1>
-            <p style="font-size: 14.5px; line-height: 1.6; opacity: 0.95;">
-                استخدم أزرار الاتجاهات (فوق، تحت، يمين، يسار) لتقود التكسي في شوارع البصرة، اصعد الركاب، ووصلهم لمعالم المدينة واجمع النجوم! ⭐
+    <div id="start-screen" class="overlay-screen">
+        <div class="modal-card">
+            <div style="font-size: 62px; margin-bottom: 6px;">🚕🌴</div>
+            <h1 style="font-size: 23px; margin-bottom: 8px;">تكسي بصراوي الصغير 3D</h1>
+            <p style="font-size: 14px; color: #37474f; line-height: 1.55;">
+                سُق التكسي الأصفر في شوارع البصرة ثلاثية الأبعاد! اصعد الركاب من نقطة الالتقاط ووصلهم إلى وجهاتهم قبل انتهاء الوقت.
             </p>
-            <button class="play-btn" onclick="startGame()">ابدأ اللعب 🚀</button>
+            <button class="action-btn" onclick="startGame()">ابدأ المغامرة 🚀</button>
         </div>
     </div>
 
-    <!-- الشريط العلوي -->
-    <div id="hud">
-        <div class="hud-badge">⭐ النجوم: <span id="score">0</span></div>
-        <div class="hud-badge">🚕 الركاب: <span id="passengers-count">0</span></div>
-        <div class="hud-badge">🏆 المستوى: <span id="level">1</span></div>
+    <!-- بطاقة مهمة الراكب (مثل بطاقة المهمة في اللعبة) -->
+    <div id="passenger-card" class="overlay-screen hidden">
+        <div class="modal-card">
+            <div id="p-avatar" style="font-size: 56px; margin-bottom: 6px;">🧑‍🎓</div>
+            <h2 id="p-title" style="font-size: 20px; margin-bottom: 6px;">راكب جديد صعد للتكسي!</h2>
+            <p id="p-dest-text" style="font-size: 14.5px; color: #333; margin-bottom: 10px;">الوجهة: العشار</p>
+            <div style="background:#fff8e1; padding:10px; border-radius:14px; border:1.5px solid #ffd54f; font-size:13px; font-weight:bold;">
+                ⏱️ الوقت المتاح: <span id="p-time-limit">45</span> ثانية &nbsp;|&nbsp; 💰 المكافأة: 100 دينار
+            </div>
+            <button class="action-btn" onclick="confirmMission()">انطلق بالرحلة 🚕</button>
+        </div>
     </div>
 
-    <!-- شريط المهمة -->
-    <div id="mission-banner">ابحث عن الراكب الذي يلوّح بيده! 👋</div>
+    <!-- شاشة إكمال المرحلة (LEVEL COMPLETE) -->
+    <div id="complete-screen" class="overlay-screen hidden">
+        <div class="modal-card">
+            <div style="font-size: 44px; margin-bottom: 4px;">⭐⭐⭐</div>
+            <h2 style="font-size: 22px; color: #e65100; margin-bottom: 6px;">أحسنت! اكتملت الرحلة</h2>
+            <p id="complete-summary" style="font-size: 14px; color: #37474f; margin-bottom: 12px;">
+                وصلت الراكب بأمان إلى وجهته!
+            </p>
+            <div style="background:#e8f5e9; padding:10px; border-radius:14px; font-weight:bold; font-size:14px;">
+                💰 الرصيد الكلي: <span id="total-coins">100</span> دينار
+            </div>
+            <button class="action-btn" onclick="nextMission()">الرحلة التالية ➡️</button>
+        </div>
+    </div>
 
-    <!-- الخريطة والأزرار -->
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
+    <!-- الشريط العلوي والخريطة المصغرة -->
+    <div id="top-hud">
+        <div class="hud-group">
+            <div class="hud-pill">⏱️ <span id="timer-val">45</span>s</div>
+            <div class="hud-pill">💰 <span id="coins-val">0</span></div>
+            <div class="hud-pill">🏆 مرحلة <span id="level-val">1</span></div>
+        </div>
+        <div id="minimap-wrap">
+            <canvas id="minimap" width="104" height="104"></canvas>
+        </div>
+    </div>
 
-        <div id="controls">
-            <button class="horn-btn" title="هورن" onclick="playHorn()">📣</button>
+    <div id="mission-toast">اتجه نحو الدائرة الخضراء لالتقاط الراكب! 🟢</div>
 
-            <div class="d-pad" aria-label="أزرار الاتجاهات">
-                <div class="empty-slot"></div>
-                <button class="ctrl-btn" id="btn-up" title="فوق">⬆️</button>
-                <div class="empty-slot"></div>
+    <!-- مشهد 3D -->
+    <canvas id="game-canvas"></canvas>
 
-                <button class="ctrl-btn" id="btn-right" title="يمين">➡️</button>
-                <div class="empty-slot"></div>
-                <button class="ctrl-btn" id="btn-left" title="يسار">⬅️</button>
+    <!-- أزرار التحكم (يسار/يمين + GAS/BRAKE + هورن) -->
+    <div id="controls-layer">
+        <div class="steer-group">
+            <button class="steer-btn" id="btn-left" title="يسار">⬅️</button>
+            <button class="steer-btn" id="btn-right" title="يمين">➡️</button>
+        </div>
 
-                <div class="empty-slot"></div>
-                <button class="ctrl-btn" id="btn-down" title="تحت">⬇️</button>
-                <div class="empty-slot"></div>
+        <div class="pedal-group">
+            <button class="horn-btn" onclick="playHorn()" title="هورن">📣</button>
+            <div class="pedals-row">
+                <button class="pedal-btn brake-btn" id="btn-brake">🛑<span>BRAKE</span></button>
+                <button class="pedal-btn gas-btn" id="btn-gas">🚀<span>GAS</span></button>
             </div>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // أصوات كرتونية مدمجة عبر Web Audio API
+        // الأصوات المدمجة (هورن، صعود، إنزال)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        function playTone(freq, type, duration, delay = 0) {
+        function playTone(freq, type, dur, delay = 0) {
             setTimeout(() => {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                gain.gain.setValueAtTime(0.13, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
-                osc.stop(audioCtx.currentTime + duration);
+                osc.stop(audioCtx.currentTime + dur);
             }, delay);
         }
-
         function playHorn() {
-            playTone(370, 'sawtooth', 0.14, 0);
-            playTone(466, 'sawtooth', 0.22, 150);
+            playTone(360, 'sawtooth', 0.14, 0);
+            playTone(450, 'sawtooth', 0.22, 150);
+        }
+        function playSuccessSound() {
+            playTone(523.25, 'sine', 0.12, 0);
+            playTone(659.25, 'sine', 0.12, 110);
+            playTone(783.99, 'sine', 0.24, 220);
         }
 
-        function playPickupSound() {
-            playTone(523.25, 'sine', 0.1, 0);
-            playTone(659.25, 'sine', 0.1, 100);
-            playTone(783.99, 'sine', 0.2, 200);
+        // إعداد المشهد والكاميرا
+        const canvas = document.getElementById('game-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x81d4fa);
+        scene.fog = new THREE.Fog(0x81d4fa, 70, 230);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400);
+
+        // الإضاءة
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfffde7, 0.85);
+        dirLight.position.set(50, 90, 40);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // الأرضية وشط العرب
+        const groundGeo = new THREE.PlaneGeometry(320, 320);
+        const groundMat = new THREE.MeshLambertMaterial({ color: 0x7cb342 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // نهر شط العرب على طرف المدينة
+        const riverGeo = new THREE.PlaneGeometry(320, 45);
+        const riverMat = new THREE.MeshLambertMaterial({ color: 0x0288d1 });
+        const river = new THREE.Mesh(riverGeo, riverMat);
+        river.rotation.x = -Math.PI / 2;
+        river.position.set(0, 0.05, -135);
+        scene.add(river);
+        // شبكة الشوارع 3D
+        const roadCoords = [-80, -40, 0, 40, 80];
+        const roadMat = new THREE.MeshLambertMaterial({ color: 0x37474f });
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        roadCoords.forEach(pos => {
+            // شارع أفقي
+            const hRoad = new THREE.Mesh(new THREE.PlaneGeometry(220, 12), roadMat);
+            hRoad.rotation.x = -Math.PI / 2;
+            hRoad.position.set(0, 0.08, pos);
+            scene.add(hRoad);
+
+            // شارع عمودي
+            const vRoad = new THREE.Mesh(new THREE.PlaneGeometry(12, 220), roadMat);
+            vRoad.rotation.x = -Math.PI / 2;
+            vRoad.position.set(pos, 0.08, 0);
+            scene.add(vRoad);
+
+            // خطوط بيضاء
+            const hLine = new THREE.Mesh(new THREE.PlaneGeometry(210, 0.4), lineMat);
+            hLine.rotation.x = -Math.PI / 2;
+            hLine.position.set(0, 0.1, pos);
+            scene.add(hLine);
+
+            const vLine = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 210), lineMat);
+            vLine.rotation.x = -Math.PI / 2;
+            vLine.position.set(pos, 0.1, 0);
+            scene.add(vLine);
+        });
+
+        // بناء مباني ملونة ونخيل بين التقاطعات
+        const buildingColors = [0xffcc80, 0x90caf9, 0xf48fb1, 0xce93d8, 0xffe082, 0xb0bec5];
+        const buildings = [];
+
+        for (let ix = 0; ix < roadCoords.length - 1; ix++) {
+            for (let iz = 0; iz < roadCoords.length - 1; iz++) {
+                const bx = (roadCoords[ix] + roadCoords[ix + 1]) / 2;
+                const bz = (roadCoords[iz] + roadCoords[iz + 1]) / 2;
+                const bh = 10 + ((ix + iz) % 4) * 6;
+                const color = buildingColors[(ix * 3 + iz) % buildingColors.length];
+
+                const bMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(20, bh, 20),
+                    new THREE.MeshLambertMaterial({ color })
+                );
+                bMesh.position.set(bx, bh / 2, bz);
+                bMesh.castShadow = true;
+                bMesh.receiveShadow = true;
+                scene.add(bMesh);
+                buildings.push({ x: bx, z: bz, half: 11.5 });
+
+                // نخلة بصراوية بجانب المبنى
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.35, 0.5, 5, 6),
+                    new THREE.MeshLambertMaterial({ color: 0x6d4c41 })
+                );
+                trunk.position.set(bx + 12, 2.5, bz + 12);
+                scene.add(trunk);
+
+                const leaves = new THREE.Mesh(
+                    new THREE.ConeGeometry(2.6, 2.8, 7),
+                    new THREE.MeshLambertMaterial({ color: 0x2e7d32 })
+                );
+                leaves.position.set(bx + 12, 5.5, bz + 12);
+                scene.add(leaves);
+            }
         }
 
-        function playDropoffSound() {
-            playTone(587.33, 'triangle', 0.12, 0);
-            playTone(880, 'triangle', 0.28, 120);
-        }
+        // مجسم التكسي الأصفر ثلاثي الأبعاد
+        const taxiGroup = new THREE.Group();
 
-        // حالة اللعبة
-        let gameStarted = false;
-        let score = 0;
-        let deliveredCount = 0;
-        let level = 1;
+        const bodyMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(2.4, 1.0, 4.4),
+            new THREE.MeshLambertMaterial({ color: 0xffd600 })
+        );
+        bodyMesh.position.y = 0.8;
+        bodyMesh.castShadow = true;
+        taxiGroup.add(bodyMesh);
 
-        // التكسي
-        const taxi = {
-            x: 150,
-            y: 180,
-            width: 46,
-            height: 28,
-            speed: 3.8,
-            angle: 0,
-            hasPassenger: false,
-            passengerEmoji: '👦'
-        };
+        const cabinMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(2.0, 0.85, 2.3),
+            new THREE.MeshLambertMaterial({ color: 0xfff59d })
+        );
+        cabinMesh.position.set(0, 1.65, -0.2);
+        cabinMesh.castShadow = true;
+        taxiGroup.add(cabinMesh);
 
-        // معالم البصرة على الخريطة
-        const landmarks = [
-            { name: 'العشار 🕌', x: 0.22, y: 0.24, badgeBg: '#ffe0b2', border: '#ef6c00' },
-            { name: 'الجزائر 🎡', x: 0.78, y: 0.24, badgeBg: '#f3e5f5', border: '#8e24aa' },
-            { name: 'جامعة البصرة 🎓', x: 0.22, y: 0.70, badgeBg: '#e3f2fd', border: '#1565c0' },
-            { name: 'المعقل ⚓', x: 0.78, y: 0.70, badgeBg: '#e8f5e9', border: '#2e7d32' }
+        // لافتة TAXI أعلى السقف
+        const signMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.9, 0.32, 0.45),
+            new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        signMesh.position.set(0, 2.2, -0.2);
+        taxiGroup.add(signMesh);
+
+        // العجلات الأربع
+        const wheelGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.35, 12);
+        const wheelMat = new THREE.MeshLambertMaterial({ color: 0x212121 });
+        [[-1.25, 1.3], [1.25, 1.3], [-1.25, -1.3], [1.25, -1.3]].forEach(([wx, wz]) => {
+            const w = new THREE.Mesh(wheelGeo, wheelMat);
+            w.rotation.z = Math.PI / 2;
+            w.position.set(wx, 0.45, wz);
+            taxiGroup.add(w);
+        });
+
+        scene.add(taxiGroup);
+
+        // حلقة الهدف المضيئة (التقاط أو إنزال)
+        const markerRing = new THREE.Mesh(
+            new THREE.RingGeometry(2.2, 3.3, 28),
+            new THREE.MeshBasicMaterial({ color: 0x00e676, side: THREE.DoubleSide })
+        );
+        markerRing.rotation.x = -Math.PI / 2;
+        markerRing.position.y = 0.18;
+        scene.add(markerRing);
+
+        // مجسم الراكب عند نقطة الالتقاط
+        const passengerMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.55, 0.55, 2.1, 10),
+            new THREE.MeshLambertMaterial({ color: 0xff5722 })
+        );
+        passengerMesh.position.y = 1.1;
+        scene.add(passengerMesh);
+        // مناطق البصرة على التقاطعات
+        const basraSpots = [
+            { name: 'العشار 🕌', x: -80, z: -80 },
+            { name: 'الجزائر 🎡', x: 80, z: -80 },
+            { name: 'جامعة البصرة 🎓', x: -80, z: 80 },
+            { name: 'المعقل ⚓', x: 80, z: 80 },
+            { name: 'كورنيش شط العرب 🌴', x: 0, z: -80 },
+            { name: 'ساحة سعد 🏛️', x: 0, z: 40 }
         ];
+        const avatars = ['🧑‍🎓', '👦', '👧', '👴', '👵'];
 
-        const passengerEmojis = ['👦', '👧', '👴', '👵', '🧑‍🎓', '👮‍♂️'];
+        let running = false;
+        let pausedForModal = false;
+        let speed = 0;
+        let heading = 0;
+        let coins = 0;
+        let level = 1;
+        let timeLeft = 45;
+        let timerInterval = null;
 
-        let target = {
-            x: 240,
-            y: 240,
-            type: 'pickup',
-            landmarkName: ''
-        };
+        let missionState = 'pickup'; // 'pickup' أو 'dropoff'
+        let currentSpot = basraSpots[0];
+        let destinationSpot = basraSpots[1];
 
-        let stars = [];
-        function resizeCanvas() {
-            const container = document.getElementById('game-container');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        const input = { left: false, right: false, gas: false, brake: false };
 
-        function spawnTarget() {
-            if (!taxi.hasPassenger) {
-                target.type = 'pickup';
-                taxi.passengerEmoji = passengerEmojis[Math.floor(Math.random() * passengerEmojis.length)];
-                target.x = 70 + Math.random() * Math.max(80, canvas.width - 140);
-                target.y = 70 + Math.random() * Math.max(80, canvas.height - 190);
-                document.getElementById('mission-banner').innerHTML =
-                    `اتجه نحو الراكب ${taxi.passengerEmoji} اللي يلوّح بيده! 👋`;
-            } else {
-                target.type = 'dropoff';
-                const lm = landmarks[Math.floor(Math.random() * landmarks.length)];
-                target.x = lm.x * canvas.width;
-                target.y = lm.y * canvas.height;
-                target.landmarkName = lm.name;
-                document.getElementById('mission-banner').innerHTML =
-                    `وصّل ${taxi.passengerEmoji} إلى <span style="color:#d84315">${lm.name}</span> 🏁`;
-            }
+        function bindControl(id, key) {
+            const el = document.getElementById(id);
+            const on = (e) => { e.preventDefault(); input[key] = true; el.classList.add('pressed'); };
+            const off = (e) => { e.preventDefault(); input[key] = false; el.classList.remove('pressed'); };
+            el.addEventListener('touchstart', on, { passive: false });
+            el.addEventListener('touchend', off, { passive: false });
+            el.addEventListener('touchcancel', off, { passive: false });
+            el.addEventListener('mousedown', on);
+            el.addEventListener('mouseup', off);
+            el.addEventListener('mouseleave', off);
         }
 
-        function spawnStars() {
-            stars = [];
-            for (let i = 0; i < 4; i++) {
-                stars.push({
-                    x: 60 + Math.random() * Math.max(80, canvas.width - 120),
-                    y: 60 + Math.random() * Math.max(80, canvas.height - 180),
-                    collected: false
-                });
-            }
-        }
+        bindControl('btn-left', 'left');
+        bindControl('btn-right', 'right');
+        bindControl('btn-gas', 'gas');
+        bindControl('btn-brake', 'brake');
 
-        function drawMap() {
-            const w = canvas.width;
-            const h = canvas.height;
-            const riverH = 68;
-            const roadW = 54;
-
-            // أرضية خضراء متدرجة
-            const grassGrad = ctx.createLinearGradient(0, 0, 0, h - riverH);
-            grassGrad.addColorStop(0, '#9ccc65');
-            grassGrad.addColorStop(1, '#7cb342');
-            ctx.fillStyle = grassGrad;
-            ctx.fillRect(0, 0, w, h);
-
-            // نهر شط العرب في الأسفل
-            const riverGrad = ctx.createLinearGradient(0, h - riverH, 0, h);
-            riverGrad.addColorStop(0, '#29b6f6');
-            riverGrad.addColorStop(1, '#0277bd');
-            ctx.fillStyle = riverGrad;
-            ctx.fillRect(0, h - riverH, w, riverH);
-
-            // ضفة النهر الرملية
-            ctx.fillStyle = '#ffe082';
-            ctx.fillRect(0, h - riverH - 6, w, 6);
-
-            // أمواج متحركة خفيفة على شط العرب
-            const waveOffset = Math.sin(Date.now() / 450) * 10;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-            for (let x = 25; x < w; x += 85) {
-                ctx.beginPath();
-                ctx.roundRect(x + waveOffset, h - riverH + 20, 38, 5, 3);
-                ctx.roundRect(x - waveOffset + 25, h - riverH + 42, 34, 5, 3);
-                ctx.fill();
-            }
-
-            // خطوط الشوارع الأفقية والعمودية
-            const hRoads = [h * 0.24, h * 0.48, h * 0.70];
-            const vRoads = [w * 0.22, w * 0.50, w * 0.78];
-
-            // حواف رصيف الشوارع
-            ctx.fillStyle = '#cfd8dc';
-            hRoads.forEach(ry => ctx.fillRect(0, ry - roadW/2 - 4, w, roadW + 8));
-            vRoads.forEach(rx => ctx.fillRect(rx - roadW/2 - 4, 0, roadW + 8, h - riverH - 6));
-
-            // الإسفلت
-            ctx.fillStyle = '#455a64';
-            hRoads.forEach(ry => ctx.fillRect(0, ry - roadW/2, w, roadW));
-            vRoads.forEach(rx => ctx.fillRect(rx - roadW/2, 0, roadW, h - riverH - 6));
-
-            // الخطوط المتقطعة البيضاء
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-            ctx.lineWidth = 2.5;
-            ctx.setLineDash([14, 14]);
-            hRoads.forEach(ry => {
-                ctx.beginPath();
-                ctx.moveTo(0, ry);
-                ctx.lineTo(w, ry);
-                ctx.stroke();
-            });
-            vRoads.forEach(rx => {
-                ctx.beginPath();
-                ctx.moveTo(rx, 0);
-                ctx.lineTo(rx, h - riverH - 6);
-                ctx.stroke();
-            });
-            ctx.setLineDash([]);
-
-            // دوّار مركزي مرتب
-            const cx = w * 0.50;
-            const cy = h * 0.48;
-            ctx.fillStyle = '#66bb6a';
-            ctx.beginPath();
-            ctx.arc(cx, cy, 24, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#eceff1';
-            ctx.stroke();
-
-            // نخيل وقوارب شط العرب
-            ctx.font = '24px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('🌴', w * 0.36, h * 0.13);
-            ctx.fillText('🌴', w * 0.64, h * 0.13);
-            ctx.fillText('🌴', w * 0.36, h * 0.60);
-            ctx.fillText('🌴', w * 0.64, h * 0.60);
-            ctx.fillText('⛵', w * 0.25, h - 22);
-            ctx.fillText('⛵', w * 0.75, h - 22);
-
-            // لافتات معالم البصرة
-            landmarks.forEach(lm => {
-                const lx = lm.x * w;
-                const ly = lm.y * h - 42;
-                ctx.font = 'bold 12px Segoe UI';
-                const textWidth = ctx.measureText(lm.name).width + 22;
-
-                ctx.fillStyle = lm.badgeBg;
-                ctx.beginPath();
-                ctx.roundRect(lx - textWidth/2, ly - 13, textWidth, 26, 12);
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = lm.border;
-                ctx.stroke();
-
-                ctx.fillStyle = '#1a237e';
-                ctx.fillText(lm.name, lx, ly + 4);
-            });
-        }
-
-        function drawEntities() {
-            // النجوم
-            ctx.font = '23px Arial';
-            ctx.textAlign = 'center';
-            stars.forEach(s => {
-                if (!s.collected) {
-                    const floatY = Math.sin(Date.now() / 250 + s.x) * 3;
-                    ctx.fillText('⭐', s.x, s.y + 8 + floatY);
-                }
-            });
-
-            // دائرة الهدف (الراكب أو نقطة الوصول)
-            const pulse = Math.sin(Date.now() / 220) * 5;
-            ctx.beginPath();
-            ctx.arc(target.x, target.y, 25 + pulse, 0, Math.PI * 2);
-            ctx.fillStyle = target.type === 'pickup' ? 'rgba(46, 125, 50, 0.28)' : 'rgba(216, 67, 21, 0.28)';
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = target.type === 'pickup' ? '#2e7d32' : '#d84315';
-            ctx.stroke();
-
-            ctx.font = '30px Arial';
-            ctx.fillText(target.type === 'pickup' ? taxi.passengerEmoji : '🏁', target.x, target.y + 10);
-
-            // رسم التكسي الكرتوني
-            ctx.save();
-            ctx.translate(taxi.x, taxi.y);
-            ctx.rotate(taxi.angle);
-
-            // ظل خفيف تحت السيارة
-            ctx.fillStyle = 'rgba(0,0,0,0.22)';
-            ctx.beginPath();
-            ctx.roundRect(-taxi.width/2 + 2, -taxi.height/2 + 4, taxi.width, taxi.height, 9);
-            ctx.fill();
-
-            // هيكل التكسي الأصفر
-            ctx.fillStyle = '#ffd54f';
-            ctx.beginPath();
-            ctx.roundRect(-taxi.width/2, -taxi.height/2, taxi.width, taxi.height, 9);
-            ctx.fill();
-            ctx.lineWidth = 2.2;
-            ctx.strokeStyle = '#ef6c00';
-            ctx.stroke();
-
-            // الزجاج الأمامي
-            ctx.fillStyle = '#81d4fa';
-            ctx.beginPath();
-            ctx.roundRect(4, -taxi.height/2 + 4, 11, taxi.height - 8, 3);
-            ctx.fill();
-
-            // لافتة TAXI أعلى السقف
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(-10, -6, 11, 12);
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(-10, -6, 11, 12);
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 6px Arial';
-            ctx.fillText('TAXI', -4.5, 2);
-
-            // عرض الراكب داخل السيارة عند صعوده
-            if (taxi.hasPassenger) {
-                ctx.font = '15px Arial';
-                ctx.fillText(taxi.passengerEmoji, -14, 5);
-            }
-
-            ctx.restore();
-        }
-        const keys = { up: false, down: false, left: false, right: false };
-
-        function bindDirectionBtn(id, dir) {
-            const btn = document.getElementById(id);
-            const press = (e) => {
-                e.preventDefault();
-                keys[dir] = true;
-                btn.classList.add('active-press');
-            };
-            const release = (e) => {
-                e.preventDefault();
-                keys[dir] = false;
-                btn.classList.remove('active-press');
-            };
-
-            btn.addEventListener('touchstart', press, { passive: false });
-            btn.addEventListener('touchend', release, { passive: false });
-            btn.addEventListener('touchcancel', release, { passive: false });
-            btn.addEventListener('mousedown', press);
-            btn.addEventListener('mouseup', release);
-            btn.addEventListener('mouseleave', release);
-        }
-
-        bindDirectionBtn('btn-up', 'up');
-        bindDirectionBtn('btn-down', 'down');
-        bindDirectionBtn('btn-left', 'left');
-        bindDirectionBtn('btn-right', 'right');
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') input.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') input.right = true;
+            if (e.key === 'ArrowUp' || e.key === 'w') input.gas = true;
+            if (e.key === 'ArrowDown' || e.key === 's') input.brake = true;
             if (e.key === ' ') playHorn();
         });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = false;
-            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = false;
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+        window.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') input.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') input.right = false;
+            if (e.key === 'ArrowUp' || e.key === 'w') input.gas = false;
+            if (e.key === 'ArrowDown' || e.key === 's') input.brake = false;
         });
 
-        function update() {
-            if (!gameStarted) return;
+        function setupMission() {
+            missionState = 'pickup';
+            const shuffled = [...basraSpots].sort(() => Math.random() - 0.5);
+            currentSpot = shuffled[0];
+            destinationSpot = shuffled[1];
 
-            let dx = 0;
-            let dy = 0;
+            markerRing.position.set(currentSpot.x, 0.18, currentSpot.z);
+            markerRing.material.color.setHex(0x00e676);
+            passengerMesh.visible = true;
+            passengerMesh.position.set(currentSpot.x, 1.1, currentSpot.z);
 
-            if (keys.up) dy -= taxi.speed;
-            if (keys.down) dy += taxi.speed;
-            if (keys.left) dx -= taxi.speed;
-            if (keys.right) dx += taxi.speed;
+            document.getElementById('mission-toast').innerText =
+                `اتجه إلى ${currentSpot.name} لالتقاط الراكب! 🟢`;
+        }
 
-            if (dx !== 0 || dy !== 0) {
-                taxi.x += dx;
-                taxi.y += dy;
-                taxi.angle = Math.atan2(dy, dx);
-            }
+        function confirmMission() {
+            document.getElementById('passenger-card').classList.add('hidden');
+            pausedForModal = false;
+            missionState = 'dropoff';
+            passengerMesh.visible = false;
 
-            // حدود الخريطة بعيداً عن النهر
-            taxi.x = Math.max(26, Math.min(canvas.width - 26, taxi.x));
-            taxi.y = Math.max(26, Math.min(canvas.height - 96, taxi.y));
+            markerRing.position.set(destinationSpot.x, 0.18, destinationSpot.z);
+            markerRing.material.color.setHex(0xff9100);
 
-            // جمع النجوم
-            stars.forEach(s => {
-                if (!s.collected && Math.hypot(taxi.x - s.x, taxi.y - s.y) < 34) {
-                    s.collected = true;
-                    score += 10;
-                    document.getElementById('score').innerText = score;
-                    playTone(920, 'sine', 0.14, 0);
-                }
+            timeLeft = 45;
+            document.getElementById('timer-val').innerText = timeLeft;
+            document.getElementById('mission-toast').innerText =
+                `وصّل الراكب إلى ${destinationSpot.name} 🏁`;
+        }
+
+        function nextMission() {
+            document.getElementById('complete-screen').classList.add('hidden');
+            pausedForModal = false;
+            level++;
+            document.getElementById('level-val').innerText = level;
+            setupMission();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!running || pausedForModal) return;
+                timeLeft--;
+                if (timeLeft <= 0) timeLeft = 45;
+                document.getElementById('timer-val').innerText = timeLeft;
+            }, 1000);
+        }
+
+        const minimapCtx = document.getElementById('minimap').getContext('2d');
+        function drawMinimap() {
+            minimapCtx.clearRect(0, 0, 104, 104);
+            minimapCtx.fillStyle = '#1b5e20';
+            minimapCtx.fillRect(0, 0, 104, 104);
+
+            // الشوارع بالخريطة المصغرة
+            minimapCtx.strokeStyle = '#607d8b';
+            minimapCtx.lineWidth = 3;
+            roadCoords.forEach(c => {
+                const p = ((c + 110) / 220) * 104;
+                minimapCtx.beginPath(); minimapCtx.moveTo(0, p); minimapCtx.lineTo(104, p); minimapCtx.stroke();
+                minimapCtx.beginPath(); minimapCtx.moveTo(p, 0); minimapCtx.lineTo(p, 104); minimapCtx.stroke();
             });
 
-            // الوصول للراكب أو الوجهة
-            if (Math.hypot(taxi.x - target.x, taxi.y - target.y) < 38) {
-                if (target.type === 'pickup') {
-                    taxi.hasPassenger = true;
-                    playPickupSound();
-                    spawnTarget();
+            // نقطة الهدف
+            const tx = ((markerRing.position.x + 110) / 220) * 104;
+            const tz = ((markerRing.position.z + 110) / 220) * 104;
+            minimapCtx.fillStyle = missionState === 'pickup' ? '#00e676' : '#ff9100';
+            minimapCtx.beginPath();
+            minimapCtx.arc(tx, tz, 5, 0, Math.PI * 2);
+            minimapCtx.fill();
+
+            // موقع التكسي
+            const px = ((taxiGroup.position.x + 110) / 220) * 104;
+            const pz = ((taxiGroup.position.z + 110) / 220) * 104;
+            minimapCtx.fillStyle = '#ffd600';
+            minimapCtx.beginPath();
+            minimapCtx.arc(px, pz, 4.5, 0, Math.PI * 2);
+            minimapCtx.fill();
+        }
+
+        function updatePhysics() {
+            if (!running || pausedForModal) return;
+
+            if (input.gas) speed = Math.min(0.68, speed + 0.025);
+            else if (input.brake) speed = Math.max(-0.32, speed - 0.035);
+            else speed *= 0.94;
+
+            if (Math.abs(speed) > 0.01) {
+                const dir = speed >= 0 ? 1 : -1;
+                if (input.left) heading += 0.042 * dir;
+                if (input.right) heading -= 0.042 * dir;
+            }
+
+            const nextX = taxiGroup.position.x - Math.sin(heading) * speed;
+            const nextZ = taxiGroup.position.z - Math.cos(heading) * speed;
+
+            // منع الاصطدام بالمباني
+            let hitBuilding = false;
+            for (const b of buildings) {
+                if (Math.abs(nextX - b.x) < b.half && Math.abs(nextZ - b.z) < b.half) {
+                    hitBuilding = true;
+                    break;
+                }
+            }
+
+            if (!hitBuilding && Math.abs(nextX) < 102 && Math.abs(nextZ) < 102) {
+                taxiGroup.position.x = nextX;
+                taxiGroup.position.z = nextZ;
+            } else {
+                speed = -speed * 0.4;
+            }
+
+            taxiGroup.rotation.y = heading;
+
+            // حركة كاميرا المطاردة خلف التكسي
+            const camDist = 11.5;
+            const camHeight = 5.8;
+            const targetCamX = taxiGroup.position.x + Math.sin(heading) * camDist;
+            const targetCamZ = taxiGroup.position.z + Math.cos(heading) * camDist;
+
+            camera.position.lerp(new THREE.Vector3(targetCamX, camHeight, targetCamZ), 0.14);
+            camera.lookAt(taxiGroup.position.x, 1.5, taxiGroup.position.z);
+
+            // نبض حلقة الهدف
+            const s = 1 + Math.sin(Date.now() / 220) * 0.12;
+            markerRing.scale.set(s, s, 1);
+
+            // التحقق من الوصول للنقطة
+            const dist = Math.hypot(
+                taxiGroup.position.x - markerRing.position.x,
+                taxiGroup.position.z - markerRing.position.z
+            );
+
+            if (dist < 4.5 && Math.abs(speed) < 0.25) {
+                speed = 0;
+                if (missionState === 'pickup') {
+                    pausedForModal = true;
+                    playSuccessSound();
+                    document.getElementById('p-avatar').innerText = avatars[Math.floor(Math.random() * avatars.length)];
+                    document.getElementById('p-dest-text').innerText = `الوجهة المطلوبة: ${destinationSpot.name}`;
+                    document.getElementById('passenger-card').classList.remove('hidden');
                 } else {
-                    taxi.hasPassenger = false;
-                    deliveredCount++;
-                    score += 50;
-                    if (deliveredCount % 3 === 0) {
-                        level++;
-                        taxi.speed = Math.min(6.5, taxi.speed + 0.4);
-                        document.getElementById('level').innerText = level;
-                    }
-                    document.getElementById('passengers-count').innerText = deliveredCount;
-                    document.getElementById('score').innerText = score;
-                    playDropoffSound();
-                    spawnStars();
-                    spawnTarget();
+                    pausedForModal = true;
+                    playSuccessSound();
+                    coins += 100;
+                    document.getElementById('coins-val').innerText = coins;
+                    document.getElementById('total-coins').innerText = coins;
+                    document.getElementById('complete-summary').innerText =
+                        `وصلت الراكب بأمان إلى ${destinationSpot.name}!`;
+                    document.getElementById('complete-screen').classList.remove('hidden');
                 }
             }
         }
 
-        function gameLoop() {
-            drawMap();
-            update();
-            drawEntities();
-            requestAnimationFrame(gameLoop);
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePhysics();
+            drawMinimap();
+            renderer.render(scene, camera);
         }
 
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
         function startGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            gameStarted = true;
-            taxi.x = canvas.width * 0.22;
-            taxi.y = canvas.height * 0.48;
-            spawnStars();
-            spawnTarget();
+            document.getElementById('start-screen').classList.add('hidden');
+            running = true;
+            taxiGroup.position.set(0, 0, 0);
+            setupMission();
+            startTimer();
             playHorn();
-            gameLoop();
+            animate();
         }
     </script>
 </body>
